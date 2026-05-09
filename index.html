@@ -148,7 +148,7 @@
                 <!-- Chats will be injected here -->
             </div>
             <div style="padding: 1rem; border-top: 1px solid #334155;">
-                <button onclick="supabase.auth.signOut()" style="background: #ef4444;">Logout</button>
+                <button onclick="supabaseClient.auth.signOut()" style="background: #ef4444;">Logout</button>
             </div>
         </aside>
 
@@ -192,7 +192,7 @@
         // --- CONFIGURATION ---
         const SUPABASE_URL = 'https://dkhczzeacrxlagpjoamg.supabase.co';
         const SUPABASE_KEY = 'sb_publishable__qSV0mKnZzvPapxXuvmM4g_I8CE8aGY';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- STATE ---
         let currentUser = null;
@@ -205,20 +205,20 @@
             const password = document.getElementById('auth-password').value;
 
             const { data, error } = type === 'login' 
-                ? await supabase.auth.signInWithPassword({ email, password })
-                : await supabase.auth.signUp({ email, password });
+                ? await supabaseClient.auth.signInWithPassword({ email, password })
+                : await supabaseClient.auth.signUp({ email, password });
 
             if (error) return alert(error.message);
             
             if (type === 'signup') {
                 const username = email.split('@')[0];
-                await supabase.from('profiles').insert([{ id: data.user.id, username }]);
+                await supabaseClient.from('profiles').insert([{ id: data.user.id, username }]);
             }
             checkUser();
         }
 
         async function checkUser() {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = await supabaseClient.auth.getUser();
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-screen').style.display = 'none';
@@ -234,7 +234,7 @@
         }
 
         async function loadProfile() {
-            const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 document.getElementById('my-username').innerText = data.username;
                 document.getElementById('my-avatar').innerText = data.username[0].toUpperCase();
@@ -315,7 +315,7 @@
             const content = input.value.trim();
             if (!content || !activeConversationId) return;
 
-            const { error } = await supabase.from('messages').insert([{
+            const { error } = await supabaseClient.from('messages').insert([{
                 conversation_id: activeConversationId,
                 sender_id: currentUser.id,
                 content: content
@@ -338,7 +338,7 @@
                     filter: `conversation_id=eq.${convId}` 
                 }, async (payload) => {
                     // Fetch user info for the new message
-                    const { data } = await supabase.from('profiles').select('username').eq('id', payload.new.sender_id).single();
+                    const { data } = await supabaseClient.from('profiles').select('username').eq('id', payload.new.sender_id).single();
                     const fullMsg = { ...payload.new, profiles: data };
                     
                     const container = document.getElementById('message-container');
@@ -386,7 +386,7 @@
                 .single();
 
             if (conv) {
-                await supabase.from('conversation_members').insert([{
+                await supabaseClient.from('conversation_members').insert([{
                     conversation_id: conv.id,
                     user_id: currentUser.id,
                     role: 'admin'
@@ -416,7 +416,7 @@
 
         // Init
         Notification.requestPermission();
-        supabase.auth.onAuthStateChange(() => checkUser());
+        supabaseClient.auth.onAuthStateChange(() => checkUser());
         checkUser();
     </script>
 </body>
