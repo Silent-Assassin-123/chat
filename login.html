@@ -1,55 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Pulse | Join</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#f8fafc;--panel:#ffffff;--accent:#4f46e5;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--input:#f1f5f9;}
-body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
-.card{background:var(--panel);padding:40px;border-radius:24px;width:360px;box-shadow:0 10px 25px rgba(0,0,0,0.05);border:1px solid var(--border);text-align:center;}
-.logo{width:48px;height:48px;background:var(--accent);border-radius:12px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;}
-h1{margin:0 0 8px;font-size:24px;letter-spacing:-0.5px;}
-input{width:100%;padding:14px;margin-bottom:12px;border-radius:12px;border:1px solid var(--border);background:var(--input);color:var(--text);outline:none;box-sizing:border-box;transition:0.2s;}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79, 70, 229, 0.1);}
-button{width:100%;padding:14px;background:var(--accent);color:#fff;border-radius:12px;border:none;font-weight:600;cursor:pointer;transition:0.2s;}
-.toggle{margin-top:20px;font-size:14px;color:var(--muted);}
-.toggle span{color:var(--accent);cursor:pointer;font-weight:600;}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #f1f5f9; --panel: #ffffff; --accent: #4f46e5; --text: #0f172a; --border: #e2e8f0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: var(--panel); padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--border); }
+        h1 { margin-bottom: 24px; font-weight: 700; letter-spacing: -1px; }
+        input { width: 100%; padding: 12px 16px; margin-bottom: 16px; border-radius: 12px; border: 1px solid var(--border); box-sizing: border-box; outline: none; font-size: 14px; transition: 0.2s; }
+        input:focus { border-color: var(--accent); ring: 2px solid #eef2ff; }
+        button { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:disabled { background: var(--border); cursor: not-allowed; }
+        .toggle { margin-top: 20px; font-size: 14px; color: #64748b; }
+        .toggle span { color: var(--accent); cursor: pointer; font-weight: 600; }
+        #err { color: #ef4444; font-size: 12px; margin-top: 12px; min-height: 18px; }
+    </style>
 </head>
 <body>
+
 <div class="card">
-    <div class="logo">P</div>
-    <h1 id="t">Pulse</h1>
-    <div id="reg" style="display:none"><input id="u" type="text" placeholder="Username" /></div>
-    <input id="e" type="email" placeholder="Email" />
-    <input id="p" type="password" placeholder="Password" />
-    <button id="btn">Log In</button>
-    <div class="toggle">Need an account? <span id="sw">Sign up</span></div>
+    <h1 id="title">Pulse</h1>
+    
+    <div id="signup-fields" style="display:none">
+        <input type="text" id="username" placeholder="Username">
+    </div>
+    
+    <input type="email" id="email" placeholder="Email address">
+    <input type="password" id="password" placeholder="Password">
+    
+    <button id="auth-btn">Log In</button>
+    
+    <div id="err"></div>
+    
+    <div class="toggle">
+        <span id="mode-text">Don't have an account?</span> 
+        <span id="switch-btn">Sign up</span>
+    </div>
 </div>
+
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-const sb = createClient('https://watrcanjjxdycydmllrj.supabase.co', 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ');
+
+/* ====== CONFIG — Use your actual Supabase details ====== */
+const SB_URL = 'https://watrcanjjxdycydmllrj.supabase.co';
+const SB_KEY = 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ';
+/* ======================================================= */
+
+const sb = createClient(SB_URL, SB_KEY, {
+    auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+    }
+});
+
 let mode = 'login';
 const $ = s => document.querySelector(s);
-$('#sw').onclick = () => {
+
+// Toggle between Login and Signup
+$('#switch-btn').onclick = () => {
     mode = mode === 'login' ? 'signup' : 'login';
-    $('#t').textContent = mode === 'login' ? 'Pulse' : 'Create Account';
-    $('#btn').textContent = mode === 'login' ? 'Log In' : 'Sign Up';
-    $('#reg').style.display = mode === 'login' ? 'none' : 'block';
+    $('#title').textContent = mode === 'login' ? 'Pulse' : 'Join Pulse';
+    $('#auth-btn').textContent = mode === 'login' ? 'Log In' : 'Create Account';
+    $('#mode-text').textContent = mode === 'login' ? "Don't have an account?" : "Already have an account?";
+    $('#switch-btn').textContent = mode === 'login' ? 'Sign up' : 'Log in';
+    $('#signup-fields').style.display = mode === 'login' ? 'none' : 'block';
+    $('#err').textContent = '';
 };
-$('#btn').onclick = async () => {
+
+// Main Auth Logic
+$('#auth-btn').onclick = async () => {
+    const email = $('#email').value.trim();
+    const password = $('#password').value;
+    const username = $('#username').value.trim();
+    const btn = $('#auth-btn');
+
+    if (!email || !password) return $('#err').textContent = "Please fill all fields.";
+    
+    btn.disabled = true;
+    btn.textContent = "Processing...";
+    $('#err').textContent = '';
+
     try {
-        if(mode === 'login') await sb.auth.signInWithPassword({ email:$('#e').value, password:$('#p').value });
-        else {
-            const { data } = await sb.auth.signUp({ email:$('#e').value, password:$('#p').value });
-            if(data.user) await sb.from('users').insert({ id: data.user.id, username: $('#u').value });
+        if (mode === 'signup') {
+            if (!username) throw new Error("Username is required.");
+            
+            const { data, error } = await sb.auth.signUp({ email, password });
+            if (error) throw error;
+
+            if (data.user) {
+                // Manually create the profile in the users table
+                const { error: pErr } = await sb.from('users').insert({ 
+                    id: data.user.id, 
+                    username: username 
+                });
+                if (pErr) throw pErr;
+            }
+            alert("Signup successful! Please log in now.");
+            location.reload();
+        } else {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+
+            if (data.session) {
+                console.log("Session verified.");
+                // HARD-BIND: Wait 800ms for Netlify/Browser to sync the token to storage
+                await new Promise(r => setTimeout(r, 800));
+                window.location.replace('index.html');
+            }
         }
-        window.location.href = 'index.html';
-    } catch(e){ alert(e.message); }
+    } catch (e) {
+        $('#err').textContent = e.message;
+        btn.disabled = false;
+        btn.textContent = mode === 'login' ? 'Log In' : 'Create Account';
+    }
 };
-sb.auth.getSession().then(({data}) => { if(data.session) window.location.href = 'index.html'; });
 </script>
+
 </body>
 </html>
