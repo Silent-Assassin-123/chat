@@ -1,423 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OmniChat | Real-Time</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #3b82f6;
-            --bg-dark: #0f172a;
-            --bg-light: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --accent: #10b981;
-            --sidebar-width: 320px;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
-
-        body { background: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; }
-
-        /* Auth Screen */
-        #auth-screen {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        }
-
-        .auth-card {
-            background: var(--bg-light); padding: 2.5rem; border-radius: 1rem;
-            width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-        }
-
-        input {
-            width: 100%; padding: 0.75rem; margin-bottom: 1rem; border-radius: 0.5rem;
-            border: 1px solid #334155; background: #0f172a; color: white;
-        }
-
-        button {
-            width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: none;
-            background: var(--primary); color: white; font-weight: 600; cursor: pointer; transition: 0.2s;
-        }
-
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
-
-        /* Main App Layout */
-        #app-screen { display: none; height: 100vh; grid-template-columns: var(--sidebar-width) 1fr; }
-
-        /* Sidebar */
-        aside {
-            background: var(--bg-light); border-right: 1px solid #334155;
-            display: flex; flex-direction: column;
-        }
-
-        .sidebar-header {
-            padding: 1.5rem; border-bottom: 1px solid #334155;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .chat-list { flex: 1; overflow-y: auto; }
-        
-        .chat-item {
-            padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem;
-            cursor: pointer; border-bottom: 1px solid #1e293b; transition: 0.2s;
-        }
-
-        .chat-item:hover { background: #334155; }
-        .chat-item.active { background: #3b82f633; border-left: 4px solid var(--primary); }
-
-        .avatar {
-            width: 45px; height: 45px; border-radius: 50%; background: #475569;
-            display: flex; align-items: center; justify-content: center; font-weight: bold;
-        }
-
-        .status-dot {
-            width: 12px; height: 12px; border-radius: 50%; background: #64748b;
-            border: 2px solid var(--bg-light); margin-left: -15px; margin-top: 30px;
-        }
-        .status-online { background: var(--accent); }
-
-        /* Chat Area */
-        main { display: flex; flex-direction: column; background: #0f172a; position: relative; }
-
-        .chat-header {
-            padding: 1rem 2rem; background: var(--bg-light); border-bottom: 1px solid #334155;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        #message-container {
-            flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1rem;
-        }
-
-        .msg { max-width: 70%; padding: 0.8rem 1.2rem; border-radius: 1rem; position: relative; line-height: 1.4; }
-        .msg-sent { align-self: flex-end; background: var(--primary); border-bottom-right-radius: 0.2rem; }
-        .msg-received { align-self: flex-start; background: #334155; border-bottom-left-radius: 0.2rem; }
-        
-        .msg-meta { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.3rem; display: block; }
-
-        .chat-input-area {
-            padding: 1.5rem 2rem; background: var(--bg-light); border-top: 1px solid #334155;
-            display: flex; gap: 1rem;
-        }
-
-        /* Notifications */
-        .notif-badge {
-            background: #ef4444; color: white; border-radius: 50%;
-            padding: 2px 6px; font-size: 0.7rem; position: absolute; top: 10px; right: 10px;
-        }
-
-        /* Modals */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: none; items-center: center; justify-content: center; z-index: 100;
-        }
-
-        /* Utils */
-        .hidden { display: none !important; }
-        .flex { display: flex; }
-    </style>
+<meta charset="utf-8" />
+<title>Pulse — Messenger</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{ --bg:#f1f5f9; --panel:#ffffff; --accent:#4f46e5; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --bubble-me:#4f46e5; --bubble-them:#f1f5f9;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;padding:12px;gap:12px;box-sizing:border-box;}
+aside{width:300px;background:var(--panel);border-radius:20px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+main{flex:1;background:var(--panel);border-radius:20px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.header{padding:18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+.conv-item{padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);transition:0.2s;}
+.conv-item.active{background:#eef2ff;border-left:4px solid var(--accent);}
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;}
+.msg{max-width:70%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;position:relative;}
+.msg.me{align-self:flex-end;background:var(--bubble-me);color:#fff;border-bottom-right-radius:4px;}
+.msg.them{align-self:flex-start;background:var(--bubble-them);color:var(--text);border-bottom-left-radius:4px;}
+.msg img{max-width:100%;border-radius:10px;margin-top:5px;}
+.seen{font-size:10px;text-align:right;margin-top:2px;font-weight:700;opacity:0.8;}
+.typing{height:18px;padding:0 20px;font-size:11px;color:var(--accent);font-weight:600;}
+.composer{padding:12px;display:flex;gap:10px;border-top:1px solid var(--border);}
+.composer input{flex:1;background:#f8fafc;border:1px solid var(--border);padding:12px 18px;border-radius:12px;outline:none;}
+.hidden{display:none;}
+</style>
 </head>
 <body>
+<aside>
+    <div class="header"><b>Pulse</b><button id="lo" style="border:none;background:none;cursor:pointer;color:var(--muted)">Logout</button></div>
+    <div id="list" style="flex:1;overflow-y:auto"></div>
+</aside>
+<main>
+    <div id="no" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted)">Select a chat</div>
+    <div id="ui" class="hidden" style="flex:1;display:flex;flex-direction:column">
+        <div id="msgs" class="messages"></div>
+        <div id="ty" class="typing"></div>
+        <form id="cf" class="composer">
+            <label style="cursor:pointer;padding:10px">📷<input type="file" id="fi" class="hidden"></label>
+            <input id="mi" placeholder="Message..." autocomplete="off">
+            <button type="submit" style="background:var(--accent);color:white;border:none;padding:10px 20px;border-radius:10px">Send</button>
+        </form>
+    </div>
+</main>
 
-    <!-- Auth Screen -->
-    <div id="auth-screen">
-        <div class="auth-card">
-            <h2 style="margin-bottom: 1.5rem; text-align: center;">OmniChat</h2>
-            <input type="email" id="auth-email" placeholder="Email">
-            <input type="password" id="auth-password" placeholder="Password">
-            <div style="display: flex; gap: 10px;">
-                <button onclick="handleAuth('login')">Login</button>
-                <button onclick="handleAuth('signup')" style="background: #475569;">Sign Up</button>
-            </div>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const sb = createClient('https://watrcanjjxdycydmllrj.supabase.co', 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ');
+const state = { user: null, activeId: null, channel: null, lastSeen: {} };
+const $ = s => document.querySelector(s);
+
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session) return window.location.href = 'login.html';
+    const { data: p } = await sb.from('users').select('*').eq('id', session.user.id).single();
+    state.user = p;
+    loadConvs();
+}
+
+async function loadConvs() {
+    const { data } = await sb.from('conversation_members').select('conversations(*)').eq('user_id', state.user.id);
+    $('#list').innerHTML = data.map(m => `
+        <div class="conv-item ${state.activeId === m.conversations.id ? 'active' : ''}" onclick="window.chat('${m.conversations.id}')">
+            ${m.conversations.name || 'Personal Chat'}
         </div>
-    </div>
+    `).join('');
+}
 
-    <!-- Main App -->
-    <div id="app-screen">
-        <aside>
-            <div class="sidebar-header">
-                <div id="user-profile" style="display: flex; align-items: center; gap: 10px;">
-                    <div class="avatar" id="my-avatar">?</div>
-                    <span id="my-username" style="font-weight: 600;">Loading...</span>
-                </div>
-                <button onclick="toggleModal('group-modal')" style="width: auto; padding: 5px 10px;"><i class="fas fa-plus"></i></button>
-            </div>
-            <div class="chat-list" id="chat-list">
-                <!-- Chats will be injected here -->
-            </div>
-            <div style="padding: 1rem; border-top: 1px solid #334155;">
-                <button onclick="supabaseClient.auth.signOut()" style="background: #ef4444;">Logout</button>
-            </div>
-        </aside>
+window.chat = async (id) => {
+    state.activeId = id;
+    $('#no').classList.add('hidden'); $('#ui').classList.remove('hidden');
+    loadConvs();
+    await fetchReceipts();
+    renderAll();
+    setupBroadcast(id);
+};
 
-        <main id="chat-main">
-            <div id="no-chat-selected" style="display: flex; flex: 1; align-items: center; justify-content: center; color: var(--text-dim);">
-                <h3>Select a conversation to start chatting</h3>
-            </div>
+async function fetchReceipts() {
+    const { data } = await sb.from('conversation_members').select('user_id, last_read_message_id').eq('conversation_id', state.activeId);
+    data.forEach(m => { if(m.user_id !== state.user.id) state.lastSeen[m.user_id] = m.last_read_message_id; });
+}
 
-            <div id="active-chat-ui" class="hidden" style="display: flex; flex-direction: column; height: 100%;">
-                <div class="chat-header">
-                    <div>
-                        <h3 id="target-chat-name">Chat Name</h3>
-                        <span id="target-chat-status" style="font-size: 0.8rem; color: var(--accent);">online</span>
-                    </div>
-                    <div id="group-actions" class="hidden">
-                        <button onclick="showMembers()" style="background:none; color: var(--text-dim);"><i class="fas fa-users"></i></button>
-                    </div>
-                </div>
+async function renderAll() {
+    const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', state.activeId).order('created_at',{ascending:true});
+    $('#msgs').innerHTML = data.map(m => {
+        const isMe = m.sender_id === state.user.id;
+        const body = m.content.startsWith('IMAGE:') ? `<img src="${m.content.replace('IMAGE:','')}">` : `<span>${m.content}</span>`;
+        const seen = (isMe && Object.values(state.lastSeen).includes(m.id)) ? '<div class="seen">Seen</div>' : '';
+        return `<div class="msg ${isMe ? 'me' : 'them'}"><small style="font-size:10px;opacity:0.7;display:block">${m.users?.username || 'User'}</small>${body}${seen}</div>`;
+    }).join('');
+    $('#msgs').scrollTop = $('#msgs').scrollHeight;
+    
+    const last = [...data].reverse().find(x => x.sender_id !== state.user.id);
+    if(last) {
+        await sb.from('conversation_members').update({ last_read_message_id: last.id }).match({ conversation_id: state.activeId, user_id: state.user.id });
+        state.channel?.send({ type:'broadcast', event:'read', payload:{ uid: state.user.id, mid: last.id }});
+    }
+}
 
-                <div id="message-container"></div>
+function setupBroadcast(id) {
+    if(state.channel) sb.removeChannel(state.channel);
+    state.channel = sb.channel(`chat:${id}`)
+        .on('broadcast', { event: 'msg' }, ({ payload }) => { if(payload.sender_id !== state.user.id) renderAll(); })
+        .on('broadcast', { event: 'typing' }, ({ payload }) => { $('#ty').textContent = payload.is ? `${payload.u} is typing...` : ''; })
+        .on('broadcast', { event: 'read' }, ({ payload }) => { state.lastSeen[payload.uid] = payload.mid; renderAll(); })
+        .subscribe();
+}
 
-                <form class="chat-input-area" id="message-form">
-                    <input type="text" id="message-input" placeholder="Type a message..." required autocomplete="off">
-                    <button type="submit" style="width: 60px;"><i class="fas fa-paper-plane"></i></button>
-                </form>
-            </div>
-        </main>
-    </div>
+$('#mi').oninput = () => {
+    state.channel?.send({ type:'broadcast', event:'typing', payload:{ u: state.user.username, is: true }});
+    clearTimeout(window.tT);
+    window.tT = setTimeout(() => state.channel?.send({ type:'broadcast', event:'typing', payload:{ is: false }}), 2000);
+};
 
-    <!-- Create Group Modal -->
-    <div id="group-modal" class="modal">
-        <div class="auth-card">
-            <h3>Create Group</h3>
-            <input type="text" id="group-name-input" placeholder="Group Name">
-            <button onclick="createGroup()">Create</button>
-            <button onclick="toggleModal('group-modal')" style="background: transparent; color: var(--text-dim); margin-top: 10px;">Cancel</button>
-        </div>
-    </div>
+$('#cf').onsubmit = async (e) => {
+    e.preventDefault();
+    const val = $('#mi').value; if(!val.trim()) return;
+    $('#mi').value = '';
+    const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: val }).select();
+    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
+    renderAll();
+};
 
-    <script>
-        // --- CONFIGURATION ---
-        const SUPABASE_URL = 'https://dkhczzeacrxlagpjoamg.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable__qSV0mKnZzvPapxXuvmM4g_I8CE8aGY';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+$('#fi').onchange = async (e) => {
+    const file = e.target.files[0];
+    const path = `${state.activeId}/${Date.now()}`;
+    await sb.storage.from('chat-images').upload(path, file);
+    const { data: { publicUrl } } = sb.storage.from('chat-images').getPublicUrl(path);
+    const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: `IMAGE:${publicUrl}` }).select();
+    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
+    renderAll();
+};
 
-        // --- STATE ---
-        let currentUser = null;
-        let activeConversationId = null;
-        let conversations = [];
-
-        // --- AUTH LOGIC ---
-        async function handleAuth(type) {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-
-            const { data, error } = type === 'login' 
-                ? await supabaseClient.auth.signInWithPassword({ email, password })
-                : await supabaseClient.auth.signUp({ email, password });
-
-            if (error) return alert(error.message);
-            
-            if (type === 'signup') {
-                const username = email.split('@')[0];
-                await supabaseClient.from('profiles').insert([{ id: data.user.id, username }]);
-            }
-            checkUser();
-        }
-
-        async function checkUser() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (user) {
-                currentUser = user;
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('app-screen').style.display = 'grid';
-                loadProfile();
-                loadConversations();
-                subscribeToGlobalChanges();
-                initPresence();
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('app-screen').style.display = 'none';
-            }
-        }
-
-        async function loadProfile() {
-            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (data) {
-                document.getElementById('my-username').innerText = data.username;
-                document.getElementById('my-avatar').innerText = data.username[0].toUpperCase();
-            }
-        }
-
-        // --- CONVERSATION LOGIC ---
-        async function loadConversations() {
-            const { data, error } = await supabase
-                .from('conversation_members')
-                .select(`
-                    conversation_id,
-                    conversations ( id, name, type )
-                `)
-                .eq('user_id', currentUser.id);
-
-            if (data) {
-                conversations = data.map(d => d.conversations);
-                renderChatList();
-            }
-        }
-
-        function renderChatList() {
-            const list = document.getElementById('chat-list');
-            list.innerHTML = conversations.map(c => `
-                <div class="chat-item ${activeConversationId === c.id ? 'active' : ''}" onclick="selectConversation('${c.id}')">
-                    <div class="avatar">${(c.name || 'D')[0].toUpperCase()}</div>
-                    <div style="flex: 1">
-                        <div style="font-weight: 600;">${c.name || 'Direct Chat'}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-dim);">${c.type}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function selectConversation(id) {
-            activeConversationId = id;
-            const conv = conversations.find(c => c.id === id);
-            
-            document.getElementById('no-chat-selected').classList.add('hidden');
-            document.getElementById('active-chat-ui').classList.remove('hidden');
-            document.getElementById('target-chat-name').innerText = conv.name || 'Direct Message';
-            
-            renderChatList();
-            loadMessages(id);
-            subscribeToMessages(id);
-        }
-
-        // --- MESSAGE LOGIC ---
-        async function loadMessages(convId) {
-            const { data } = await supabase
-                .from('messages')
-                .select(`*, profiles:sender_id(username)`)
-                .eq('conversation_id', convId)
-                .order('created_at', { ascending: true });
-
-            const container = document.getElementById('message-container');
-            container.innerHTML = data.map(m => renderMessageHtml(m)).join('');
-            scrollToBottom();
-        }
-
-        function renderMessageHtml(m) {
-            const isMe = m.sender_id === currentUser.id;
-            return `
-                <div class="msg ${isMe ? 'msg-sent' : 'msg-received'}">
-                    <div style="font-size: 0.7rem; opacity: 0.8; margin-bottom: 4px;">
-                        ${isMe ? 'You' : m.profiles?.username || 'User'}
-                    </div>
-                    ${m.content}
-                    <span class="msg-meta">${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                </div>
-            `;
-        }
-
-        document.getElementById('message-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('message-input');
-            const content = input.value.trim();
-            if (!content || !activeConversationId) return;
-
-            const { error } = await supabaseClient.from('messages').insert([{
-                conversation_id: activeConversationId,
-                sender_id: currentUser.id,
-                content: content
-            }]);
-
-            if (!error) input.value = '';
-        };
-
-        // --- REALTIME SUBSCRIPTIONS ---
-        let messageSubscription;
-        function subscribeToMessages(convId) {
-            if (messageSubscription) supabase.removeChannel(messageSubscription);
-
-            messageSubscription = supabase
-                .channel(`public:messages:conversation_id=eq.${convId}`)
-                .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'messages',
-                    filter: `conversation_id=eq.${convId}` 
-                }, async (payload) => {
-                    // Fetch user info for the new message
-                    const { data } = await supabaseClient.from('profiles').select('username').eq('id', payload.new.sender_id).single();
-                    const fullMsg = { ...payload.new, profiles: data };
-                    
-                    const container = document.getElementById('message-container');
-                    container.innerHTML += renderMessageHtml(fullMsg);
-                    scrollToBottom();
-                    showNotification(fullMsg);
-                })
-                .subscribe();
-        }
-
-        function subscribeToGlobalChanges() {
-            // Watch for new conversations
-            supabase.channel('global_changes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'conversations' }, loadConversations)
-                .subscribe();
-        }
-
-        // --- PRESENCE ---
-        function initPresence() {
-            const channel = supabase.channel('online-users');
-            channel
-                .on('presence', { event: 'sync' }, () => {
-                    const state = channel.presenceState();
-                    console.log('Presence state synced', state);
-                })
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await channel.track({
-                            user_id: currentUser.id,
-                            online_at: new Date().toISOString(),
-                        });
-                    }
-                });
-        }
-
-        // --- GROUP LOGIC ---
-        async function createGroup() {
-            const name = document.getElementById('group-name-input').value;
-            if (!name) return;
-
-            const { data: conv, error } = await supabase
-                .from('conversations')
-                .insert([{ name, type: 'group', created_by: currentUser.id }])
-                .select()
-                .single();
-
-            if (conv) {
-                await supabaseClient.from('conversation_members').insert([{
-                    conversation_id: conv.id,
-                    user_id: currentUser.id,
-                    role: 'admin'
-                }]);
-                toggleModal('group-modal');
-                loadConversations();
-            }
-        }
-
-        // --- UI UTILS ---
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.style.display = m.style.display === 'flex' ? 'none' : 'flex';
-        }
-
-        function scrollToBottom() {
-            const c = document.getElementById('message-container');
-            c.scrollTop = c.scrollHeight;
-        }
-
-        function showNotification(msg) {
-            if (msg.sender_id === currentUser.id) return;
-            if (Notification.permission === "granted") {
-                new Notification(`New message from ${msg.profiles?.username}`, { body: msg.content });
-            }
-        }
-
-        // Init
-        Notification.requestPermission();
-        supabaseClient.auth.onAuthStateChange(() => checkUser());
-        checkUser();
-    </script>
+$('#lo').onclick = async () => { await sb.auth.signOut(); window.location.href = 'login.html'; };
+init();
+</script>
 </body>
 </html>
