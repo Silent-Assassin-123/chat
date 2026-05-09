@@ -44,94 +44,277 @@ main{flex:1;background:var(--panel);border-radius:20px;border:1px solid var(--bo
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-const sb = createClient('https://watrcanjjxdycydmllrj.supabase.co', 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ');
-const state = { user: null, activeId: null, channel: null, lastSeen: {} };
+
+/* ====== CONFIG — replace these with your actual keys from Supabase Dashboard ====== */
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co'; 
+const SUPABASE_KEY = 'YOUR-ANON-KEY';
+/* ================================================================================== */
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  realtime: { params: { eventsPerSecond: 20 } }
+});
+
+const state = {
+  user: null,
+  conversations: [],
+  activeId: null,
+  messagesById: {},
+  convChannels: {},     
+  presenceChannel: null,
+  online: new Set(),
+  authMode: 'login',
+  searchQuery: '',
+  isInitializing: true // Guard to prevent premature redirects
+};
+
+/* ---------- UI HELPERS ---------- */
 const $ = s => document.querySelector(s);
-
-async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if(!session) return window.location.href = 'login.html';
-    const { data: p } = await sb.from('users').select('*').eq('id', session.user.id).single();
-    state.user = p;
-    loadConvs();
-}
-
-async function loadConvs() {
-    const { data } = await sb.from('conversation_members').select('conversations(*)').eq('user_id', state.user.id);
-    $('#list').innerHTML = data.map(m => `
-        <div class="conv-item ${state.activeId === m.conversations.id ? 'active' : ''}" onclick="window.chat('${m.conversations.id}')">
-            ${m.conversations.name || 'Personal Chat'}
-        </div>
-    `).join('');
-}
-
-window.chat = async (id) => {
-    state.activeId = id;
-    $('#no').classList.add('hidden'); $('#ui').classList.remove('hidden');
-    loadConvs();
-    await fetchReceipts();
-    renderAll();
-    setupBroadcast(id);
+const el = (tag, props={}, ...kids) => {
+  const n = document.createElement(tag);
+  Object.entries(props).forEach(([k,v])=>{
+    if(v===false||v===null||v===undefined) return;
+    if(k==='class') n.className=v;
+    else if(k==='onclick') n.onclick=v;
+    else if(k==='oninput') n.oninput=v;
+    else if(k==='onsubmit') n.onsubmit=v;
+    else if(k==='html') n.innerHTML=v;
+    else n.setAttribute(k,v);
+  });
+  kids.flat().forEach(k=>{
+    if(k===false||k===null||k===undefined||k==='') return;
+    n.append(k?.nodeType?k:document.createTextNode(String(k)));
+  });
+  return n;
+};
+const initials = s => (s||'?').trim().slice(0,2).toUpperCase();
+const gradientFor = id => 'gradient-'+(Math.abs([...String(id||'')].reduce((a,c)=>a+c.charCodeAt(0),0))%6);
+const fmtTime = ts => {
+  const d=new Date(ts), n=new Date();
+  if(d.toDateString()===n.toDateString()) return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  const diff=(n-d)/86400000;
+  if(diff<7) return d.toLocaleDateString([], {weekday:'short'});
+  return d.toLocaleDateString();
+};
+const fmtDay = ts => {
+  const d=new Date(ts), n=new Date();
+  if(d.toDateString()===n.toDateString()) return 'Today';
+  const y=new Date(n); y.setDate(n.getDate()-1);
+  if(d.toDateString()===y.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+};
+const avatar = (name, id, size='') => el('div',{class:`avatar ${size} ${gradientFor(id||name)}`}, initials(name));
+const toast = (title, body, id='') => {
+  const t = el('div',{class:'toast'},
+    el('div',{class:'av'}, avatar(title, id, 'sm')),
+    el('div',{}, el('b',{},title), el('span',{},body))
+  );
+  $('#toasts').append(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 4000);
 };
 
-async function fetchReceipts() {
-    const { data } = await sb.from('conversation_members').select('user_id, last_read_message_id').eq('conversation_id', state.activeId);
-    data.forEach(m => { if(m.user_id !== state.user.id) state.lastSeen[m.user_id] = m.last_read_message_id; });
+/* ---------- AUTH LOGIC ---------- */
+function setAuthMode(){
+  const login = state.authMode==='login';
+  $('#au-submit').textContent = login?'Log in':'Create account';
+  $('#au-mode-text').textContent = login?"Don't have an account?":'Already have an account?';
+  $('#au-toggle').textContent = login?'Sign up':'Log in';
+  $('#au-name-wrap').style.display = login?'none':'block';
 }
+$('#au-toggle').onclick = () => { state.authMode = state.authMode==='login'?'signup':'login'; setAuthMode(); };
+setAuthMode();
 
-async function renderAll() {
-    const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', state.activeId).order('created_at',{ascending:true});
-    $('#msgs').innerHTML = data.map(m => {
-        const isMe = m.sender_id === state.user.id;
-        const body = m.content.startsWith('IMAGE:') ? `<img src="${m.content.replace('IMAGE:','')}">` : `<span>${m.content}</span>`;
-        const seen = (isMe && Object.values(state.lastSeen).includes(m.id)) ? '<div class="seen">Seen</div>' : '';
-        return `<div class="msg ${isMe ? 'me' : 'them'}"><small style="font-size:10px;opacity:0.7;display:block">${m.users?.username || 'User'}</small>${body}${seen}</div>`;
-    }).join('');
-    $('#msgs').scrollTop = $('#msgs').scrollHeight;
-    
-    const last = [...data].reverse().find(x => x.sender_id !== state.user.id);
-    if(last) {
-        await sb.from('conversation_members').update({ last_read_message_id: last.id }).match({ conversation_id: state.activeId, user_id: state.user.id });
-        state.channel?.send({ type:'broadcast', event:'read', payload:{ uid: state.user.id, mid: last.id }});
+$('#au-submit').onclick = async () => {
+  const email = $('#au-email').value.trim();
+  const password = $('#au-pass').value;
+  const username = $('#au-name').value.trim();
+  $('#au-err').textContent='';
+  try{
+    if(state.authMode==='signup'){
+      if(!username) throw new Error('Username required');
+      const { data, error } = await sb.auth.signUp({ email, password });
+      if(error) throw error;
+      if(data.user) await sb.from('users').insert({ id: data.user.id, username });
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
     }
+  } catch(e){ $('#au-err').textContent = e.message; }
+};
+
+// Initial Session Check on Page Load
+async function initApp() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    await onLogin(session.user);
+  } else {
+    showAuth();
+  }
+  state.isInitializing = false;
 }
 
-function setupBroadcast(id) {
-    if(state.channel) sb.removeChannel(state.channel);
-    state.channel = sb.channel(`chat:${id}`)
-        .on('broadcast', { event: 'msg' }, ({ payload }) => { if(payload.sender_id !== state.user.id) renderAll(); })
-        .on('broadcast', { event: 'typing' }, ({ payload }) => { $('#ty').textContent = payload.is ? `${payload.u} is typing...` : ''; })
-        .on('broadcast', { event: 'read' }, ({ payload }) => { state.lastSeen[payload.uid] = payload.mid; renderAll(); })
-        .subscribe();
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    await onLogin(session.user);
+  } else if (!state.isInitializing) {
+    showAuth();
+  }
+});
+
+function showAuth(){ $('#auth').style.display='block'; $('#chat').style.display='none'; }
+
+async function onLogin(authUser){
+  let { data: profile } = await sb.from('users').select('*').eq('id', authUser.id).maybeSingle();
+  if(!profile){
+    await sb.from('users').insert({ id: authUser.id, username: authUser.email.split('@')[0] });
+    ({ data: profile } = await sb.from('users').select('*').eq('id', authUser.id).single());
+  }
+  state.user = profile;
+  $('#auth').style.display='none';
+  $('#chat').style.display='flex';
+  $('#me-name').textContent = '@'+profile.username;
+  await sb.from('users').update({ last_seen: new Date().toISOString() }).eq('id', profile.id);
+  await loadConversations();
+  setupPresence();
 }
 
-$('#mi').oninput = () => {
-    state.channel?.send({ type:'broadcast', event:'typing', payload:{ u: state.user.username, is: true }});
-    clearTimeout(window.tT);
-    window.tT = setTimeout(() => state.channel?.send({ type:'broadcast', event:'typing', payload:{ is: false }}), 2000);
+$('#btn-logout').onclick = async () => { 
+  cleanupSubs(); 
+  await sb.auth.signOut(); 
+  showAuth();
 };
+$('#btn-theme').onclick = () => document.documentElement.classList.toggle('dark');
 
-$('#cf').onsubmit = async (e) => {
-    e.preventDefault();
-    const val = $('#mi').value; if(!val.trim()) return;
-    $('#mi').value = '';
-    const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: val }).select();
-    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
-    renderAll();
-};
+/* ---------- CHAT CORE ---------- */
+async function loadConversations(){
+  const { data: mems } = await sb.from('conversation_members').select('conversation_id, conversations(*)').eq('user_id', state.user.id);
+  const convs = (mems||[]).map(m=>m.conversations).filter(Boolean);
+  for(const c of convs){
+    const { data: ms } = await sb.from('conversation_members').select('user_id, users(id,username)').eq('conversation_id', c.id);
+    c.members = ms||[];
+    const { data: last } = await sb.from('messages').select('*').eq('conversation_id', c.id).order('created_at',{ascending:false}).limit(1);
+    c.last = last?.[0];
+    c.unread = 0;
+    subscribeConv(c.id);
+  }
+  state.conversations = convs.sort((a,b)=>(b.last?.created_at||b.created_at).localeCompare(a.last?.created_at||a.created_at));
+  renderChatList();
+}
 
-$('#fi').onchange = async (e) => {
-    const file = e.target.files[0];
-    const path = `${state.activeId}/${Date.now()}`;
-    await sb.storage.from('chat-images').upload(path, file);
-    const { data: { publicUrl } } = sb.storage.from('chat-images').getPublicUrl(path);
-    const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: `IMAGE:${publicUrl}` }).select();
-    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
-    renderAll();
-};
+function convDisplay(c){
+  if(c.type==='group') return { name: c.name||'Group', avatarName: c.name||'G', avatarId: c.id };
+  const other = c.members.find(m=>m.user_id!==state.user.id);
+  const u = other?.users;
+  return { name: u?.username||'Direct', avatarName: u?.username, avatarId: u?.id, otherId: u?.id };
+}
 
-$('#lo').onclick = async () => { await sb.auth.signOut(); window.location.href = 'login.html'; };
-init();
+function renderChatList(){
+  const list = $('#conv-list'); list.innerHTML='';
+  const q = state.searchQuery.toLowerCase();
+  const filtered = state.conversations.filter(c => {
+    const d = convDisplay(c);
+    return !q || d.name.toLowerCase().includes(q);
+  });
+  filtered.forEach(c => {
+    const d = convDisplay(c);
+    const av = avatar(d.avatarName, d.avatarId);
+    if(c.type==='direct' && state.online.has(d.otherId)) av.append(el('div',{class:'pres on'}));
+    const node = el('div',{class:'conv'+(c.id===state.activeId?' active':''), onclick:()=>switchConversation(c.id)},
+      av,
+      el('div',{class:'conv-body'},
+        el('div',{class:'conv-top'}, el('div',{class:'conv-name'}, d.name), el('div',{class:'conv-time'}, c.last?fmtTime(c.last.created_at):'')),
+        el('div',{class:'conv-bot'}, el('div',{class:'conv-prev'}, c.last?c.last.content:'No messages'), c.unread?el('div',{class:'badge'},c.unread):null)
+      )
+    );
+    list.append(node);
+  });
+}
+
+async function switchConversation(id){
+  state.activeId = id;
+  const c = state.conversations.find(x=>x.id===id);
+  c.unread = 0;
+  const d = convDisplay(c);
+  $('#main').innerHTML = '';
+  const head = el('div',{class:'m-head'},
+    el('button',{class:'icon-btn', onclick:()=>{$('#main').innerHTML=''; state.activeId=null;}},'←'),
+    avatar(d.avatarName, d.avatarId),
+    el('div',{class:'info'}, el('div',{class:'name'}, d.name), el('div',{class:'sub'}, c.type==='direct'?(state.online.has(d.otherId)?'Online':'Offline'):`${c.members.length} members`))
+  );
+  const msgs = el('div',{class:'messages', id:'msgs'});
+  const comp = el('form',{class:'composer', onsubmit:e=>{e.preventDefault(); sendMessage();}}, el('input',{id:'msg-input', placeholder:'Message...', autocomplete:'off'}), el('button',{class:'send'},'➤'));
+  $('#main').append(head, msgs, comp);
+  await loadMessages(id);
+  renderChatList();
+}
+
+async function loadMessages(id){
+  const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', id).order('created_at',{ascending:true});
+  state.messagesById[id] = data || [];
+  renderMessages(id);
+}
+
+function renderMessages(id){
+  const box = $('#msgs'); if(!box || state.activeId !== id) return;
+  box.innerHTML = '';
+  let prevDay = null;
+  state.messagesById[id].forEach(m => {
+    const day = new Date(m.created_at).toDateString();
+    if(day !== prevDay) box.append(el('div',{class:'day-sep'}, fmtDay(m.created_at)));
+    const me = m.sender_id === state.user.id;
+    box.append(el('div',{class:'msg '+(me?'me':'them')}, el('span',{}, m.content), el('span',{class:'time'}, fmtTime(m.created_at))));
+    prevDay = day;
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendMessage(){
+  const inp = $('#msg-input'); const val = inp.value.trim(); if(!val) return;
+  inp.value = '';
+  const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: val }).select('*').single();
+  state.convChannels[state.activeId].send({ type:'broadcast', event:'message', payload: { ...data, _username: state.user.username } });
+  handleIncomingMessage({ ...data, _username: state.user.username }, true);
+}
+
+function subscribeConv(id){
+  if(state.convChannels[id]) return;
+  state.convChannels[id] = sb.channel(`conv:${id}`, { config:{ broadcast:{ self:false } } })
+    .on('broadcast', { event:'message' }, ({ payload }) => handleIncomingMessage(payload, false))
+    .subscribe();
+}
+
+function handleIncomingMessage(m, self){
+  const c = state.conversations.find(x=>x.id===m.conversation_id);
+  if(!c) return;
+  const arr = state.messagesById[m.conversation_id] ||= [];
+  if(arr.some(x=>x.id===m.id)) return;
+  if(m._username) m.users = { username: m._username };
+  arr.push(m);
+  c.last = m;
+  if(!self && state.activeId !== c.id) {
+     c.unread++;
+     toast(convDisplay(c).name, m.content, m.sender_id);
+  }
+  state.conversations.sort((a,b)=>(b.last?.created_at||b.created_at).localeCompare(a.last?.created_at||a.created_at));
+  renderChatList();
+  if(state.activeId === m.conversation_id) renderMessages(m.conversation_id);
+}
+
+function setupPresence(){
+  state.presenceChannel = sb.channel('presence', { config:{ presence:{ key: state.user.id } } });
+  state.presenceChannel
+    .on('presence', { event:'sync' }, () => {
+      state.online = new Set(Object.keys(state.presenceChannel.presenceState()));
+      renderChatList();
+    })
+    .subscribe(async s => { if(s==='SUBSCRIBED') await state.presenceChannel.track({ at: Date.now() }); });
+}
+
+function cleanupSubs(){
+  Object.values(state.convChannels).forEach(ch => sb.removeChannel(ch));
+  if(state.presenceChannel) sb.removeChannel(state.presenceChannel);
+}
+
+initApp(); // Run everything
 </script>
 </body>
 </html>
