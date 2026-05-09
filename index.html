@@ -3,79 +3,57 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Pulse — Pro Messenger</title>
+<title>Pulse | Messenger</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f1f5f9; --panel:#ffffff; --accent:#4f46e5; --text:#0f172a; 
-  --muted:#64748b; --border:#e2e8f0; --panel-2:#f8fafc;
-  --bubble-me:#4f46e5; --bubble-them:#f1f5f9;
-}
+:root{--bg:#f1f5f9;--panel:#ffffff;--accent:#4f46e5;--text:#0f172a;--muted:#64748b;--border:#e2e8f0;--bubble-me:#4f46e5;--bubble-them:#f1f5f9;}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;padding:12px;gap:12px;box-sizing:border-box;}
 aside{width:320px;background:var(--panel);border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.03);}
-main{flex:1;background:var(--panel);border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.03);}
-
-/* Sidebar Header & Actions */
+main{flex:1;background:var(--panel);border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
 .sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
 .brand{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.btn-action{background:var(--panel-2);border:1px solid var(--border);padding:8px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;color:var(--text);display:flex;align-items:center;justify-content:center;gap:5px;}
-.btn-action:hover{background:var(--border);border-color:var(--muted);}
-
-/* Conversation List */
+.btn-action{background:#f8fafc;border:1px solid var(--border);padding:8px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.btn-action:hover{background:var(--border);}
 #conv-list{flex:1;overflow-y:auto;}
-.conv-item{padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);transition:0.2s;display:flex;align-items:center;gap:12px;}
-.conv-item:hover{background:var(--panel-2);}
+.conv-item{padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;transition:0.2s;}
 .conv-item.active{background:#eef2ff;border-left:4px solid var(--accent);}
 .avatar{width:40px;height:40px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;}
-
-/* Chat Area */
-.chat-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
 .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;}
 .msg{max-width:70%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;position:relative;}
 .msg.me{align-self:flex-end;background:var(--bubble-me);color:#fff;border-bottom-right-radius:4px;}
-.msg.them{align-self:flex-start;background:var(--bubble-them);color:var(--text);border-bottom-left-radius:4px;}
-.sender{font-size:10px;font-weight:700;margin-bottom:2px;opacity:0.7;}
-.seen{font-size:10px;text-align:right;margin-top:4px;font-weight:700;color:var(--muted);}
-
-/* Input */
-.composer{padding:15px;display:flex;gap:10px;border-top:1px solid var(--border);background:var(--panel);}
-.composer input{flex:1;background:var(--panel-2);border:1px solid var(--border);padding:12px 18px;border-radius:14px;outline:none;font-size:14px;}
-.btn-send{background:var(--accent);color:white;border:none;padding:0 20px;border-radius:12px;font-weight:600;cursor:pointer;}
-
-.hidden{display:none;}
+.msg.them{align-self:flex-start;background:var(--bubble-them);border-bottom-left-radius:4px;}
+.composer{padding:15px;display:flex;gap:10px;border-top:1px solid var(--border);}
+.composer input{flex:1;background:#f8fafc;border:1px solid var(--border);padding:12px 18px;border-radius:14px;outline:none;}
+.hidden{display:none !important;}
+#gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;font-weight:600;color:var(--accent);flex-direction:column;gap:10px;}
 </style>
 </head>
 <body>
 
+<div id="gate">
+    <span>Verifying Connection...</span>
+    <small style="font-weight:400;opacity:0.6">If this takes too long, please log in again.</small>
+</div>
+
 <aside>
     <div class="sidebar-header">
-        <div class="brand">
-            <b style="font-size:20px;letter-spacing:-0.5px">Pulse</b>
-            <button id="logout" style="background:none;border:none;color:var(--muted);font-weight:600;cursor:pointer">Logout</button>
-        </div>
+        <div class="brand"><b style="font-size:20px">Pulse</b><button id="logout" style="background:none;border:none;color:var(--muted);cursor:pointer;font-weight:600">Logout</button></div>
         <div class="actions">
-            <button class="btn-action" id="new-dm"><span>+</span> DM</button>
-            <button class="btn-action" id="new-group"><span>+</span> Group</button>
+            <button class="btn-action" id="new-dm">+ DM</button>
+            <button class="btn-action" id="new-group">+ Group</button>
         </div>
     </div>
     <div id="conv-list"></div>
 </aside>
 
 <main>
-    <div id="empty-state" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-direction:column">
-        <div style="font-size:48px;margin-bottom:10px">✨</div>
-        Select a chat to start messaging
-    </div>
+    <div id="empty" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-direction:column">Select a chat</div>
     <div id="chat-ui" class="hidden" style="flex:1;display:flex;flex-direction:column">
-        <div class="chat-header">
-            <div id="chat-avatar" class="avatar">?</div>
-            <div id="chat-title" style="font-weight:700">Chat</div>
-        </div>
         <div id="msgs" class="messages"></div>
         <form id="msg-form" class="composer">
-            <input id="msg-input" placeholder="Type a message..." autocomplete="off">
-            <button type="submit" class="btn-send">Send</button>
+            <input id="msg-input" placeholder="Message..." autocomplete="off">
+            <button type="submit" style="background:var(--accent);color:white;border:none;padding:0 20px;border-radius:12px;font-weight:600;cursor:pointer">Send</button>
         </form>
     </div>
 </main>
@@ -85,121 +63,121 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SB_URL = 'https://watrcanjjxdycydmllrj.supabase.co';
 const SB_KEY = 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ';
-const sb = createClient(SB_URL, SB_KEY);
 
-const state = { user: null, activeId: null, channel: null, lastSeen: {} };
+// Force session persistence
+const sb = createClient(SB_URL, SB_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+});
+
+const state = { user: null, activeId: null, channel: null };
 const $ = s => document.querySelector(s);
 
-async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if(!session) return window.location.href = 'login.html';
+async function initApp() {
+    // 1. Give the browser a moment to settle (Netlify Fix)
+    await new Promise(r => setTimeout(r, 500));
+
+    // 2. Try to get the session
+    const { data: { session }, error } = await sb.auth.getSession();
     
-    const { data: p } = await sb.from('users').select('*').eq('id', session.user.id).single();
-    state.user = p;
+    if (error || !session) {
+        console.warn("No session found, redirecting...");
+        window.location.replace('login.html');
+        return;
+    }
+
+    // 3. Get profile
+    const { data: profile, error: pError } = await sb.from('users').select('*').eq('id', session.user.id).maybeSingle();
+    
+    if (!profile) {
+        // Fallback: If user exists in Auth but not in Users table
+        console.error("Profile missing. Redirecting to login to re-sync.");
+        await sb.auth.signOut();
+        window.location.replace('login.html');
+        return;
+    }
+
+    state.user = profile;
+    $('#gate').classList.add('hidden');
     loadSidebar();
 }
 
-// --- NEW: CREATE CHAT LOGIC ---
+// Global Auth Watcher
+sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+        window.location.replace('login.html');
+    }
+});
+
 $('#new-dm').onclick = async () => {
-    const target = prompt("Enter the username of the person you want to message:");
+    const target = prompt("Username:");
     if(!target) return;
-    
     const { data: user } = await sb.from('users').select('id').eq('username', target).single();
     if(!user) return alert("User not found!");
-
     const { data: conv } = await sb.from('conversations').insert({ type: 'direct' }).select().single();
-    await sb.from('conversation_members').insert([
-        { conversation_id: conv.id, user_id: state.user.id },
-        { conversation_id: conv.id, user_id: user.id }
-    ]);
+    await sb.from('conversation_members').insert([{ conversation_id: conv.id, user_id: state.user.id }, { conversation_id: conv.id, user_id: user.id }]);
     openChat(conv.id, target);
 };
 
 $('#new-group').onclick = async () => {
-    const gName = prompt("Enter Group Name:");
-    if(!gName) return;
-    
-    const { data: conv } = await sb.from('conversations').insert({ type: 'group', name: gName }).select().single();
+    const name = prompt("Group Name:");
+    if(!name) return;
+    const { data: conv } = await sb.from('conversations').insert({ type: 'group', name }).select().single();
     await sb.from('conversation_members').insert({ conversation_id: conv.id, user_id: state.user.id });
-    openChat(conv.id, gName);
+    openChat(conv.id, name);
 };
 
-// --- CORE CHAT LOGIC ---
 async function loadSidebar() {
     const { data } = await sb.from('conversation_members').select('conversations(*)').eq('user_id', state.user.id);
+    if(!data) return;
     $('#conv-list').innerHTML = data.map(m => {
-        const title = m.conversations.name || 'Private Chat';
-        return `
-        <div class="conv-item ${state.activeId === m.conversations.id ? 'active' : ''}" onclick="window.openChat('${m.conversations.id}', '${title}')">
-            <div class="avatar">${title[0].toUpperCase()}</div>
-            <div style="font-weight:600;font-size:14px">${title}</div>
+        if(!m.conversations) return '';
+        const t = m.conversations.name || 'Private Chat';
+        return `<div class="conv-item ${state.activeId === m.conversations.id ? 'active' : ''}" onclick="window.openChat('${m.conversations.id}', '${t}')">
+            <div class="avatar">${t[0].toUpperCase()}</div><div style="font-weight:600;font-size:14px">${t}</div>
         </div>`;
     }).join('');
 }
 
 window.openChat = async (id, title) => {
     state.activeId = id;
-    $('#empty-state').classList.add('hidden');
-    $('#chat-ui').classList.remove('hidden');
-    $('#chat-title').textContent = title;
-    $('#chat-avatar').textContent = title[0].toUpperCase();
-    
+    $('#empty').classList.add('hidden'); $('#chat-ui').classList.remove('hidden');
     loadSidebar();
-    await fetchReadStatus(id);
     renderMessages();
-    
     if(state.channel) sb.removeChannel(state.channel);
-    state.channel = sb.channel(`chat:${id}`)
-        .on('broadcast', { event: 'msg' }, () => renderMessages())
-        .on('broadcast', { event: 'read' }, ({payload}) => { state.lastSeen[payload.uid] = payload.mid; renderMessages(); })
-        .subscribe();
+    state.channel = sb.channel(`chat:${id}`).on('broadcast',{event:'msg'},()=>renderMessages()).subscribe();
 };
-
-async function fetchReadStatus(id) {
-    const { data } = await sb.from('conversation_members').select('user_id, last_read_message_id').eq('conversation_id', id);
-    data.forEach(m => { if(m.user_id !== state.user.id) state.lastSeen[m.user_id] = m.last_read_message_id; });
-}
 
 async function renderMessages() {
     const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', state.activeId).order('created_at',{ascending:true});
-    $('#msgs').innerHTML = data.map(m => {
-        const isMe = m.sender_id === state.user.id;
-        const isSeen = Object.values(state.lastSeen).includes(m.id);
-        return `
-        <div class="msg ${isMe ? 'me' : 'them'}">
-            <div class="sender">${m.users?.username || 'User'}</div>
+    if(!data) return;
+    $('#msgs').innerHTML = data.map(m => `
+        <div class="msg ${m.sender_id === state.user.id ? 'me' : 'them'}">
+            <div style="font-size:10px;font-weight:700;margin-bottom:2px;opacity:0.7">${m.users?.username || 'User'}</div>
             <div>${m.content}</div>
-            ${(isMe && isSeen) ? '<div class="seen">Seen</div>' : ''}
-        </div>`;
-    }).join('');
+        </div>`).join('');
     $('#msgs').scrollTop = $('#msgs').scrollHeight;
-
-    const lastThem = [...data].reverse().find(x => x.sender_id !== state.user.id);
-    if(lastThem) {
-        await sb.from('conversation_members').update({ last_read_message_id: lastThem.id }).match({ conversation_id: state.activeId, user_id: state.user.id });
-        state.channel?.send({ type:'broadcast', event:'read', payload:{ uid: state.user.id, mid: lastThem.id }});
-    }
 }
 
 $('#msg-form').onsubmit = async (e) => {
     e.preventDefault();
-    const val = $('#msg-input').value;
-    if(!val.trim()) return;
+    const val = $('#msg-input').value; if(!val.trim()) return;
     $('#msg-input').value = '';
-    
-    const { data } = await sb.from('messages').insert({ 
-        conversation_id: state.activeId, 
-        sender_id: state.user.id, 
-        content: val 
-    }).select();
-    
-    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
+    const { data, error } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: val }).select();
+    if(error) return console.error(error);
+    state.channel.send({ type: 'broadcast', event: 'msg', payload: data[0] });
     renderMessages();
 };
 
-$('#logout').onclick = async () => { await sb.auth.signOut(); window.location.href = 'login.html'; };
+$('#logout').onclick = async () => {
+    await sb.auth.signOut();
+};
 
-init();
+// Start the sequence
+initApp();
 </script>
 </body>
 </html>
