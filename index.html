@@ -2,42 +2,80 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Anirudh — Message app thing</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pulse — Pro Messenger</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{ --bg:#f1f5f9; --panel:#ffffff; --accent:#4f46e5; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --bubble-me:#4f46e5; --bubble-them:#f1f5f9;}
+:root{
+  --bg:#f1f5f9; --panel:#ffffff; --accent:#4f46e5; --text:#0f172a; 
+  --muted:#64748b; --border:#e2e8f0; --panel-2:#f8fafc;
+  --bubble-me:#4f46e5; --bubble-them:#f1f5f9;
+}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;margin:0;height:100vh;display:flex;padding:12px;gap:12px;box-sizing:border-box;}
-aside{width:300px;background:var(--panel);border-radius:20px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-main{flex:1;background:var(--panel);border-radius:20px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative;}
-.header{padding:18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
-.conv-item{padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);transition:0.2s;}
+aside{width:320px;background:var(--panel);border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.03);}
+main{flex:1;background:var(--panel);border-radius:24px;border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.03);}
+
+/* Sidebar Header & Actions */
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border);}
+.brand{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.btn-action{background:var(--panel-2);border:1px solid var(--border);padding:8px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:0.2s;color:var(--text);display:flex;align-items:center;justify-content:center;gap:5px;}
+.btn-action:hover{background:var(--border);border-color:var(--muted);}
+
+/* Conversation List */
+#conv-list{flex:1;overflow-y:auto;}
+.conv-item{padding:14px 20px;cursor:pointer;border-bottom:1px solid var(--border);transition:0.2s;display:flex;align-items:center;gap:12px;}
+.conv-item:hover{background:var(--panel-2);}
 .conv-item.active{background:#eef2ff;border-left:4px solid var(--accent);}
+.avatar{width:40px;height:40px;background:var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:14px;}
+
+/* Chat Area */
+.chat-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
 .messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;}
 .msg{max-width:70%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5;position:relative;}
 .msg.me{align-self:flex-end;background:var(--bubble-me);color:#fff;border-bottom-right-radius:4px;}
 .msg.them{align-self:flex-start;background:var(--bubble-them);color:var(--text);border-bottom-left-radius:4px;}
-.msg img{max-width:100%;border-radius:10px;margin-top:5px;}
-.seen{font-size:10px;text-align:right;margin-top:2px;font-weight:700;opacity:0.8;}
-.typing{height:18px;padding:0 20px;font-size:11px;color:var(--accent);font-weight:600;}
-.composer{padding:12px;display:flex;gap:10px;border-top:1px solid var(--border);}
-.composer input{flex:1;background:#f8fafc;border:1px solid var(--border);padding:12px 18px;border-radius:12px;outline:none;}
+.sender{font-size:10px;font-weight:700;margin-bottom:2px;opacity:0.7;}
+.seen{font-size:10px;text-align:right;margin-top:4px;font-weight:700;color:var(--muted);}
+
+/* Input */
+.composer{padding:15px;display:flex;gap:10px;border-top:1px solid var(--border);background:var(--panel);}
+.composer input{flex:1;background:var(--panel-2);border:1px solid var(--border);padding:12px 18px;border-radius:14px;outline:none;font-size:14px;}
+.btn-send{background:var(--accent);color:white;border:none;padding:0 20px;border-radius:12px;font-weight:600;cursor:pointer;}
+
 .hidden{display:none;}
 </style>
 </head>
 <body>
+
 <aside>
-    <div class="header"><b>Ani Message</b><button id="lo" style="border:none;background:none;cursor:pointer;color:var(--muted)">Logout</button></div>
-    <div id="list" style="flex:1;overflow-y:auto"></div>
+    <div class="sidebar-header">
+        <div class="brand">
+            <b style="font-size:20px;letter-spacing:-0.5px">Pulse</b>
+            <button id="logout" style="background:none;border:none;color:var(--muted);font-weight:600;cursor:pointer">Logout</button>
+        </div>
+        <div class="actions">
+            <button class="btn-action" id="new-dm"><span>+</span> DM</button>
+            <button class="btn-action" id="new-group"><span>+</span> Group</button>
+        </div>
+    </div>
+    <div id="conv-list"></div>
 </aside>
+
 <main>
-    <div id="no" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted)">Select a chat</div>
-    <div id="ui" class="hidden" style="flex:1;display:flex;flex-direction:column">
+    <div id="empty-state" style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);flex-direction:column">
+        <div style="font-size:48px;margin-bottom:10px">✨</div>
+        Select a chat to start messaging
+    </div>
+    <div id="chat-ui" class="hidden" style="flex:1;display:flex;flex-direction:column">
+        <div class="chat-header">
+            <div id="chat-avatar" class="avatar">?</div>
+            <div id="chat-title" style="font-weight:700">Chat</div>
+        </div>
         <div id="msgs" class="messages"></div>
-        <div id="ty" class="typing"></div>
-        <form id="cf" class="composer">
-            <label style="cursor:pointer;padding:10px">📷<input type="file" id="fi" class="hidden"></label>
-            <input id="mi" placeholder="Message..." autocomplete="off">
-            <button type="submit" style="background:var(--accent);color:white;border:none;padding:10px 20px;border-radius:10px">Send</button>
+        <form id="msg-form" class="composer">
+            <input id="msg-input" placeholder="Type a message..." autocomplete="off">
+            <button type="submit" class="btn-send">Send</button>
         </form>
     </div>
 </main>
@@ -45,276 +83,123 @@ main{flex:1;background:var(--panel);border-radius:20px;border:1px solid var(--bo
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-/* ====== CONFIG — replace these with your actual keys from Supabase Dashboard ====== */
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co'; 
-const SUPABASE_KEY = 'YOUR-ANON-KEY';
-/* ================================================================================== */
+const SB_URL = 'https://watrcanjjxdycydmllrj.supabase.co';
+const SB_KEY = 'sb_publishable_dXrYdphNQJdWL_U4IjALTQ__rMZWfgQ';
+const sb = createClient(SB_URL, SB_KEY);
 
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
-  realtime: { params: { eventsPerSecond: 20 } }
-});
-
-const state = {
-  user: null,
-  conversations: [],
-  activeId: null,
-  messagesById: {},
-  convChannels: {},     
-  presenceChannel: null,
-  online: new Set(),
-  authMode: 'login',
-  searchQuery: '',
-  isInitializing: true // Guard to prevent premature redirects
-};
-
-/* ---------- UI HELPERS ---------- */
+const state = { user: null, activeId: null, channel: null, lastSeen: {} };
 const $ = s => document.querySelector(s);
-const el = (tag, props={}, ...kids) => {
-  const n = document.createElement(tag);
-  Object.entries(props).forEach(([k,v])=>{
-    if(v===false||v===null||v===undefined) return;
-    if(k==='class') n.className=v;
-    else if(k==='onclick') n.onclick=v;
-    else if(k==='oninput') n.oninput=v;
-    else if(k==='onsubmit') n.onsubmit=v;
-    else if(k==='html') n.innerHTML=v;
-    else n.setAttribute(k,v);
-  });
-  kids.flat().forEach(k=>{
-    if(k===false||k===null||k===undefined||k==='') return;
-    n.append(k?.nodeType?k:document.createTextNode(String(k)));
-  });
-  return n;
-};
-const initials = s => (s||'?').trim().slice(0,2).toUpperCase();
-const gradientFor = id => 'gradient-'+(Math.abs([...String(id||'')].reduce((a,c)=>a+c.charCodeAt(0),0))%6);
-const fmtTime = ts => {
-  const d=new Date(ts), n=new Date();
-  if(d.toDateString()===n.toDateString()) return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  const diff=(n-d)/86400000;
-  if(diff<7) return d.toLocaleDateString([], {weekday:'short'});
-  return d.toLocaleDateString();
-};
-const fmtDay = ts => {
-  const d=new Date(ts), n=new Date();
-  if(d.toDateString()===n.toDateString()) return 'Today';
-  const y=new Date(n); y.setDate(n.getDate()-1);
-  if(d.toDateString()===y.toDateString()) return 'Yesterday';
-  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
-};
-const avatar = (name, id, size='') => el('div',{class:`avatar ${size} ${gradientFor(id||name)}`}, initials(name));
-const toast = (title, body, id='') => {
-  const t = el('div',{class:'toast'},
-    el('div',{class:'av'}, avatar(title, id, 'sm')),
-    el('div',{}, el('b',{},title), el('span',{},body))
-  );
-  $('#toasts').append(t);
-  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 4000);
-};
 
-/* ---------- AUTH LOGIC ---------- */
-function setAuthMode(){
-  const login = state.authMode==='login';
-  $('#au-submit').textContent = login?'Log in':'Create account';
-  $('#au-mode-text').textContent = login?"Don't have an account?":'Already have an account?';
-  $('#au-toggle').textContent = login?'Sign up':'Log in';
-  $('#au-name-wrap').style.display = login?'none':'block';
+async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session) return window.location.href = 'login.html';
+    
+    const { data: p } = await sb.from('users').select('*').eq('id', session.user.id).single();
+    state.user = p;
+    loadSidebar();
 }
-$('#au-toggle').onclick = () => { state.authMode = state.authMode==='login'?'signup':'login'; setAuthMode(); };
-setAuthMode();
 
-$('#au-submit').onclick = async () => {
-  const email = $('#au-email').value.trim();
-  const password = $('#au-pass').value;
-  const username = $('#au-name').value.trim();
-  $('#au-err').textContent='';
-  try{
-    if(state.authMode==='signup'){
-      if(!username) throw new Error('Username required');
-      const { data, error } = await sb.auth.signUp({ email, password });
-      if(error) throw error;
-      if(data.user) await sb.from('users').insert({ id: data.user.id, username });
-    } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if(error) throw error;
+// --- NEW: CREATE CHAT LOGIC ---
+$('#new-dm').onclick = async () => {
+    const target = prompt("Enter the username of the person you want to message:");
+    if(!target) return;
+    
+    const { data: user } = await sb.from('users').select('id').eq('username', target).single();
+    if(!user) return alert("User not found!");
+
+    const { data: conv } = await sb.from('conversations').insert({ type: 'direct' }).select().single();
+    await sb.from('conversation_members').insert([
+        { conversation_id: conv.id, user_id: state.user.id },
+        { conversation_id: conv.id, user_id: user.id }
+    ]);
+    openChat(conv.id, target);
+};
+
+$('#new-group').onclick = async () => {
+    const gName = prompt("Enter Group Name:");
+    if(!gName) return;
+    
+    const { data: conv } = await sb.from('conversations').insert({ type: 'group', name: gName }).select().single();
+    await sb.from('conversation_members').insert({ conversation_id: conv.id, user_id: state.user.id });
+    openChat(conv.id, gName);
+};
+
+// --- CORE CHAT LOGIC ---
+async function loadSidebar() {
+    const { data } = await sb.from('conversation_members').select('conversations(*)').eq('user_id', state.user.id);
+    $('#conv-list').innerHTML = data.map(m => {
+        const title = m.conversations.name || 'Private Chat';
+        return `
+        <div class="conv-item ${state.activeId === m.conversations.id ? 'active' : ''}" onclick="window.openChat('${m.conversations.id}', '${title}')">
+            <div class="avatar">${title[0].toUpperCase()}</div>
+            <div style="font-weight:600;font-size:14px">${title}</div>
+        </div>`;
+    }).join('');
+}
+
+window.openChat = async (id, title) => {
+    state.activeId = id;
+    $('#empty-state').classList.add('hidden');
+    $('#chat-ui').classList.remove('hidden');
+    $('#chat-title').textContent = title;
+    $('#chat-avatar').textContent = title[0].toUpperCase();
+    
+    loadSidebar();
+    await fetchReadStatus(id);
+    renderMessages();
+    
+    if(state.channel) sb.removeChannel(state.channel);
+    state.channel = sb.channel(`chat:${id}`)
+        .on('broadcast', { event: 'msg' }, () => renderMessages())
+        .on('broadcast', { event: 'read' }, ({payload}) => { state.lastSeen[payload.uid] = payload.mid; renderMessages(); })
+        .subscribe();
+};
+
+async function fetchReadStatus(id) {
+    const { data } = await sb.from('conversation_members').select('user_id, last_read_message_id').eq('conversation_id', id);
+    data.forEach(m => { if(m.user_id !== state.user.id) state.lastSeen[m.user_id] = m.last_read_message_id; });
+}
+
+async function renderMessages() {
+    const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', state.activeId).order('created_at',{ascending:true});
+    $('#msgs').innerHTML = data.map(m => {
+        const isMe = m.sender_id === state.user.id;
+        const isSeen = Object.values(state.lastSeen).includes(m.id);
+        return `
+        <div class="msg ${isMe ? 'me' : 'them'}">
+            <div class="sender">${m.users?.username || 'User'}</div>
+            <div>${m.content}</div>
+            ${(isMe && isSeen) ? '<div class="seen">Seen</div>' : ''}
+        </div>`;
+    }).join('');
+    $('#msgs').scrollTop = $('#msgs').scrollHeight;
+
+    const lastThem = [...data].reverse().find(x => x.sender_id !== state.user.id);
+    if(lastThem) {
+        await sb.from('conversation_members').update({ last_read_message_id: lastThem.id }).match({ conversation_id: state.activeId, user_id: state.user.id });
+        state.channel?.send({ type:'broadcast', event:'read', payload:{ uid: state.user.id, mid: lastThem.id }});
     }
-  } catch(e){ $('#au-err').textContent = e.message; }
+}
+
+$('#msg-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const val = $('#msg-input').value;
+    if(!val.trim()) return;
+    $('#msg-input').value = '';
+    
+    const { data } = await sb.from('messages').insert({ 
+        conversation_id: state.activeId, 
+        sender_id: state.user.id, 
+        content: val 
+    }).select();
+    
+    state.channel?.send({ type: 'broadcast', event: 'msg', payload: data[0] });
+    renderMessages();
 };
 
-// Initial Session Check on Page Load
-async function initApp() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    await onLogin(session.user);
-  } else {
-    showAuth();
-  }
-  state.isInitializing = false;
-}
+$('#logout').onclick = async () => { await sb.auth.signOut(); window.location.href = 'login.html'; };
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
-    await onLogin(session.user);
-  } else if (!state.isInitializing) {
-    showAuth();
-  }
-});
-
-function showAuth(){ $('#auth').style.display='block'; $('#chat').style.display='none'; }
-
-async function onLogin(authUser){
-  let { data: profile } = await sb.from('users').select('*').eq('id', authUser.id).maybeSingle();
-  if(!profile){
-    await sb.from('users').insert({ id: authUser.id, username: authUser.email.split('@')[0] });
-    ({ data: profile } = await sb.from('users').select('*').eq('id', authUser.id).single());
-  }
-  state.user = profile;
-  $('#auth').style.display='none';
-  $('#chat').style.display='flex';
-  $('#me-name').textContent = '@'+profile.username;
-  await sb.from('users').update({ last_seen: new Date().toISOString() }).eq('id', profile.id);
-  await loadConversations();
-  setupPresence();
-}
-
-$('#btn-logout').onclick = async () => { 
-  cleanupSubs(); 
-  await sb.auth.signOut(); 
-  showAuth();
-};
-$('#btn-theme').onclick = () => document.documentElement.classList.toggle('dark');
-
-/* ---------- CHAT CORE ---------- */
-async function loadConversations(){
-  const { data: mems } = await sb.from('conversation_members').select('conversation_id, conversations(*)').eq('user_id', state.user.id);
-  const convs = (mems||[]).map(m=>m.conversations).filter(Boolean);
-  for(const c of convs){
-    const { data: ms } = await sb.from('conversation_members').select('user_id, users(id,username)').eq('conversation_id', c.id);
-    c.members = ms||[];
-    const { data: last } = await sb.from('messages').select('*').eq('conversation_id', c.id).order('created_at',{ascending:false}).limit(1);
-    c.last = last?.[0];
-    c.unread = 0;
-    subscribeConv(c.id);
-  }
-  state.conversations = convs.sort((a,b)=>(b.last?.created_at||b.created_at).localeCompare(a.last?.created_at||a.created_at));
-  renderChatList();
-}
-
-function convDisplay(c){
-  if(c.type==='group') return { name: c.name||'Group', avatarName: c.name||'G', avatarId: c.id };
-  const other = c.members.find(m=>m.user_id!==state.user.id);
-  const u = other?.users;
-  return { name: u?.username||'Direct', avatarName: u?.username, avatarId: u?.id, otherId: u?.id };
-}
-
-function renderChatList(){
-  const list = $('#conv-list'); list.innerHTML='';
-  const q = state.searchQuery.toLowerCase();
-  const filtered = state.conversations.filter(c => {
-    const d = convDisplay(c);
-    return !q || d.name.toLowerCase().includes(q);
-  });
-  filtered.forEach(c => {
-    const d = convDisplay(c);
-    const av = avatar(d.avatarName, d.avatarId);
-    if(c.type==='direct' && state.online.has(d.otherId)) av.append(el('div',{class:'pres on'}));
-    const node = el('div',{class:'conv'+(c.id===state.activeId?' active':''), onclick:()=>switchConversation(c.id)},
-      av,
-      el('div',{class:'conv-body'},
-        el('div',{class:'conv-top'}, el('div',{class:'conv-name'}, d.name), el('div',{class:'conv-time'}, c.last?fmtTime(c.last.created_at):'')),
-        el('div',{class:'conv-bot'}, el('div',{class:'conv-prev'}, c.last?c.last.content:'No messages'), c.unread?el('div',{class:'badge'},c.unread):null)
-      )
-    );
-    list.append(node);
-  });
-}
-
-async function switchConversation(id){
-  state.activeId = id;
-  const c = state.conversations.find(x=>x.id===id);
-  c.unread = 0;
-  const d = convDisplay(c);
-  $('#main').innerHTML = '';
-  const head = el('div',{class:'m-head'},
-    el('button',{class:'icon-btn', onclick:()=>{$('#main').innerHTML=''; state.activeId=null;}},'←'),
-    avatar(d.avatarName, d.avatarId),
-    el('div',{class:'info'}, el('div',{class:'name'}, d.name), el('div',{class:'sub'}, c.type==='direct'?(state.online.has(d.otherId)?'Online':'Offline'):`${c.members.length} members`))
-  );
-  const msgs = el('div',{class:'messages', id:'msgs'});
-  const comp = el('form',{class:'composer', onsubmit:e=>{e.preventDefault(); sendMessage();}}, el('input',{id:'msg-input', placeholder:'Message...', autocomplete:'off'}), el('button',{class:'send'},'➤'));
-  $('#main').append(head, msgs, comp);
-  await loadMessages(id);
-  renderChatList();
-}
-
-async function loadMessages(id){
-  const { data } = await sb.from('messages').select('*, users(username)').eq('conversation_id', id).order('created_at',{ascending:true});
-  state.messagesById[id] = data || [];
-  renderMessages(id);
-}
-
-function renderMessages(id){
-  const box = $('#msgs'); if(!box || state.activeId !== id) return;
-  box.innerHTML = '';
-  let prevDay = null;
-  state.messagesById[id].forEach(m => {
-    const day = new Date(m.created_at).toDateString();
-    if(day !== prevDay) box.append(el('div',{class:'day-sep'}, fmtDay(m.created_at)));
-    const me = m.sender_id === state.user.id;
-    box.append(el('div',{class:'msg '+(me?'me':'them')}, el('span',{}, m.content), el('span',{class:'time'}, fmtTime(m.created_at))));
-    prevDay = day;
-  });
-  box.scrollTop = box.scrollHeight;
-}
-
-async function sendMessage(){
-  const inp = $('#msg-input'); const val = inp.value.trim(); if(!val) return;
-  inp.value = '';
-  const { data } = await sb.from('messages').insert({ conversation_id: state.activeId, sender_id: state.user.id, content: val }).select('*').single();
-  state.convChannels[state.activeId].send({ type:'broadcast', event:'message', payload: { ...data, _username: state.user.username } });
-  handleIncomingMessage({ ...data, _username: state.user.username }, true);
-}
-
-function subscribeConv(id){
-  if(state.convChannels[id]) return;
-  state.convChannels[id] = sb.channel(`conv:${id}`, { config:{ broadcast:{ self:false } } })
-    .on('broadcast', { event:'message' }, ({ payload }) => handleIncomingMessage(payload, false))
-    .subscribe();
-}
-
-function handleIncomingMessage(m, self){
-  const c = state.conversations.find(x=>x.id===m.conversation_id);
-  if(!c) return;
-  const arr = state.messagesById[m.conversation_id] ||= [];
-  if(arr.some(x=>x.id===m.id)) return;
-  if(m._username) m.users = { username: m._username };
-  arr.push(m);
-  c.last = m;
-  if(!self && state.activeId !== c.id) {
-     c.unread++;
-     toast(convDisplay(c).name, m.content, m.sender_id);
-  }
-  state.conversations.sort((a,b)=>(b.last?.created_at||b.created_at).localeCompare(a.last?.created_at||a.created_at));
-  renderChatList();
-  if(state.activeId === m.conversation_id) renderMessages(m.conversation_id);
-}
-
-function setupPresence(){
-  state.presenceChannel = sb.channel('presence', { config:{ presence:{ key: state.user.id } } });
-  state.presenceChannel
-    .on('presence', { event:'sync' }, () => {
-      state.online = new Set(Object.keys(state.presenceChannel.presenceState()));
-      renderChatList();
-    })
-    .subscribe(async s => { if(s==='SUBSCRIBED') await state.presenceChannel.track({ at: Date.now() }); });
-}
-
-function cleanupSubs(){
-  Object.values(state.convChannels).forEach(ch => sb.removeChannel(ch));
-  if(state.presenceChannel) sb.removeChannel(state.presenceChannel);
-}
-
-initApp(); // Run everything
+init();
 </script>
 </body>
 </html>
